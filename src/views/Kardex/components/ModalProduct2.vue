@@ -1,0 +1,266 @@
+<template>
+  <div>
+    <b-modal size="xl" hide-footer v-model="modalProducts" class="w-100" title="Productos">
+      <b-row>
+        <h5>Sali</h5>
+        <b-col md="12">
+          <b-form-group label="Buscar producto :">
+            <b-form-input type="search" autofocus ref="search_product" v-model="search_product" ></b-form-input>
+            
+          </b-form-group>
+        </b-col>
+        <b-col md="12">
+          <div class="table-responsive mt-3">
+            <table class="table table-hover table-bordered">
+              <thead>
+                <tr>
+                  <th width="5%"  rowspan="2" class="text-center align-middle">#</th>
+                  <th width="8%"  rowspan="2" class="text-center align-middle">Código</th>
+                  <th width="55%"  rowspan="2" class="text-center align-middle">Nombre</th>
+                  <!-- <th width="10%"  :colspan="warehouses.length" class="text-center align-middle">{{establishment.name }}</th> -->
+                  <th width="10%"  rowspan="2" class="text-center align-middle">Cantidad</th>
+                  <th width="10%"  rowspan="2" class="text-center align-middle">Acciones</th>
+                </tr>
+                <tr>
+                  <!-- <th class="text-center" v-for="item in warehouses" :key="item.id_warehouse">{{item.name}}</th> -->
+                </tr>
+              </thead>
+              <tbody v-for="(item, it) in products" :key="item.id_product">
+                <tr>
+                  <td class="text-center">{{ it + 1 }}</td>
+                  <td class="text-left">{{ item.code }}</td>
+                  <td class="text-left">{{ item.name + " - " +item.presentation }}</td>
+                  <!-- <td class="text-center" v-for="stock in item.stock" :key="stock.id_warehouse+stock.quantity">
+                   {{ stock.quantity }}
+                  </td> -->
+                  <td class="text-center">
+                    <input type="number" value="1" :ref="'mODCantidad'+item.id_product" class="form-control">
+                  </td>
+                  <td class="text-center">
+                        <CButton block color="primary" @click="AddProduct(item.id_product)" >Add</CButton>
+
+                      <!-- <button type="button" @click="AddProduct(item.id_product)" class="btn btn-info">
+                        <i class="fas fa-plus-square"></i>
+                      </button> -->
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </b-col>
+      </b-row>
+    </b-modal>
+  </div>
+</template>
+<style>
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1040;
+    width: 100vw;
+    height: 100vh;
+   background-color: rgba(10, 10, 10, 0.7);
+}
+
+
+</style>
+<script>
+const axios = require("axios").default;
+const Swal = require("sweetalert2");
+const je = require("json-encrypt");
+import { mapState,mapActions } from "vuex";
+import EventBus from "@/assets/js/EventBus";
+// import Notifications from 'vue-notification/dist/ssr.js';
+
+
+export default {
+  name: "ModalsProduct",
+  data() {
+    return {
+        modalProducts:false,
+        module:'Output',
+        role:0,
+        search_product:'',
+        products: [],
+        establishment:{},
+        warehouses:[],
+        id_establishment:0,
+    };
+  },
+  created (){
+    this.products.push({id_product:1,
+     code:1,
+          name: 'pro1',
+          presentation: 'pres',
+          unit_measure: 2,
+          igv:1,
+          existence_type: 'pres',
+          quantity: 1})
+  },
+  mounted () {
+     EventBus.$on('ModalProductsShow', (data) => {
+    //   this.id_establishment = data.id_establishment;
+      this.modalProducts = true;
+    //  this.role = data.role;
+     // this.ViewEstablishment();
+     // this.ListWarehouse();
+   });
+    
+  },
+  methods: {
+      SearchProducts,
+      AddProduct,
+      ViewEstablishment,
+      ListWarehouse,
+
+        ...mapActions('Output',['mLoadAddOutputDetail']),
+      
+  },
+  computed: {
+    ...mapState(["url_base"]),
+   
+    // id_establishment: function () {
+    //   let establishment = window.localStorage.getItem("id_establishment");
+    //   establishment = JSON.parse(je.decrypt(establishment));
+    //   return establishment;
+    // }
+  },
+};
+
+function ViewEstablishment() {
+  
+  let me = this;
+  let url = this.url_base + "establishment/view/" + this.id_establishment;
+
+  axios({
+    method: "GET",
+    url: url,
+    headers: {
+      token: this.token,
+      module: this.module,
+      role: this.role,
+    },
+  })
+    .then(function (response) {
+      if (response.data.status == 200) {
+        me.establishment = response.data.result;
+      } 
+    })
+    .catch((error) => {
+      // Swal.fire({ icon: 'error', text: 'A ocurrido un error', timer: 3000,})
+    });
+}
+
+function ListWarehouse() {
+  
+  let me = this;
+  let url = this.url_base + "active-warehouses/"+this.id_establishment;
+  axios({
+    method: "GET",
+    url: url,
+    headers: {
+      token: this.token,
+      module: this.module,
+      role: this.role,
+    },
+  })
+    .then(function (response) {
+      if (response.data.status == 200) {
+        me.warehouses = response.data.result;
+      } else {
+        Swal.fire({ icon: 'error', text: 'A ocurrido un error', timer: 3000,})
+      }
+    })
+    .catch((error) => {
+      // Swal.fire("422", "A Ocurrido un error" + error, "error");
+    });
+}
+
+function AddProduct(id_product) {
+  
+    let quantity = this.$refs['mODCantidad'+id_product][0]['value'];
+    let me = this;
+     let detail = {
+          id_product:id_product,
+          code:1,
+          name:'pro1',
+          presentation: 'pro1',
+          unit_measure: 1,
+          igv: 1,
+          existence_type: 1,
+          quantity: quantity,
+        }
+     me.mLoadAddOutputDetail(detail);
+        
+
+    let url = this.url_base + "product/view/" + id_product;
+
+    // axios({
+    //   method: "GET",
+    //   url: url,
+    //   headers: {
+    //     token: this.token,
+    //     module: this.module,
+    //     role: this.role,
+    //   },
+    // })
+    // .then(function (response) {
+    //   if (response.data.status == 200) {
+          
+    //     let detail = {
+    //       id_product: response.data.result.id_product,
+    //       code: response.data.result.code,
+    //       name: response.data.result.name,
+    //       presentation: response.data.result.presentation,
+    //       unit_measure: response.data.result.unit_measure,
+    //       igv: response.data.result.igv,
+    //       existence_type: response.data.result.existence_type,
+    //       quantity: quantity,
+    //     }
+        
+    //     me.mLoadAddOutputDetail(detail);
+    //     me.$notify({ group: 'alert', title: 'Sistema', text:'Se ha agregado el producto '+detail.name + ' - ' + detail.presentation, type: 'success'});
+        
+    //   } else {
+    //     Swal.fire({ icon: 'error', text: 'A ocurrido un error', timer: 3000,})
+    //   }
+    // })
+    // .catch((error) => {
+    //   console.log(error);
+    // });
+
+   
+}
+//Buscar productos
+function SearchProducts() {
+  let me = this;
+  let search = this.search_product == "" ? "all" : this.search_product;
+  let url = this.url_base + "search-products-stock";
+  let data = {
+    id_establishment : this.id_establishment,
+    search : search,
+    stock: "all"
+  };
+  axios({
+    method: "POST",
+    url: url,
+    data: data,
+    headers: {
+      token: this.token,
+    },
+  })
+    .then(function (response) {
+      if (response.data.status == 200) {
+        me.products = response.data.result;
+      } else {
+        me.products = [];
+      }
+    })
+    .catch((error) => {
+      Swal.fire({ icon: 'error', text: 'A ocurrido un error', timer: 3000,})
+      
+    });
+}
+</script>
