@@ -1,4 +1,6 @@
+let publicPath = process.env.NODE_ENV === 'production' ? '/MecanicaBeltran' : '/';
 module.exports = {
+    publicPath,
     lintOnSave: false,
     runtimeCompiler: true,
     configureWebpack: {
